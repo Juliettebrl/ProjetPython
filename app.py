@@ -1,6 +1,5 @@
-from flask import Flask
 import folium
-from geopy.distance import geodesic
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
@@ -8,54 +7,50 @@ app = Flask(__name__)
 def home():
     return "Bienvenue sur ma page d'accueil !"
 
+@app.route('/calcul', methods=['GET', 'POST'])
+def calculette():
+    result = None
+    if request.method == 'POST':
+        num1 = float(request.form['num1'])
+        num2 = float(request.form['num2'])
+        operation = request.form['operation']
+
+        if operation == 'add':
+            result = num1 + num2
+        elif operation == 'subtract':
+            result = num1 - num2
+        elif operation == 'multiply':
+            result = num1 * num2
+        elif operation == 'divide':
+            if num2 != 0:
+                result = num1 / num2
+            else:
+                result = "Erreur : Division par zéro"
+
+    return render_template('calculette.html', result=result)
+
+@app.route('/about', methods=['GET', 'POST'])
+def about():
+    if request.method == 'POST':
+        # Récupérer la sélection de l'utilisateur
+        destination = request.form.get('destination')
+        # Création d'une carte centrée sur Calais
+        m = folium.Map(location=[50.95, 1.85], zoom_start=13)
+        # Ajouter un marqueur pour Calais
+        folium.Marker([50.95, 1.85], popup='Calais ici !').add_to(m)
+        # Ajouter des marqueurs et un chemin en fonction de la sélection
+        if destination == 'gareC':
+            folium.Marker([50.955, 1.855], popup='Gare de Calais').add_to(m)
+            folium.PolyLine([(50.95, 1.85), (50.955, 1.855)], color="blue", dash_array='5').add_to(m)
+        elif destination == 'univ':
+            folium.Marker([50.95,1.88], popup='Université').add_to(m)
+            folium.PolyLine([(50.95, 1.85), (50.95,1.88)], color="red", dash_array='5').add_to(m)
+        elif destination == 'gareF':
+            folium.Marker([50.93, 1.85], popup='Gare de Calais Frethun').add_to(m)
+            folium.PolyLine([(50.95, 1.85), (50.93, 1.85)], color="green", dash_array='5').add_to(m)
+        # Sauvegarder la carte dans le dossier static
+        m.save('static/carte.html')
+    return render_template('about.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-@app.route('/about')
-def about():
-    return "À propos de moi : Je suis en train d'apprendre à développer des applications web avec Flask !"
-
-def about():
-# coordGareFrethun=(50.901235, 1.811054)
-# coordGareCalaisVille=(50.9536, 1.8509)
-# coordUniversite=(50.9532, 1.8804)
-
-
-if.request.methode =='POST':
-    destination = request.form.get('destination')
-
-m = folium.Map(location=(50.95,1.88), zoom_start=12,tiles="cartodb positron") #lat,long
-folium.Marker(
-    location=[coordUniversite[0],coordUniversite[1]],
-    tooltip="Click me!",
-    popup="Université",
-    icon=folium.Icon(icon='1', prefix='fa', color='red'),
-).add_to(m)
-
-folium.Marker(
-    location=[coordGareCalaisVille[0],coordGareCalaisVille[1]],
-    tooltip="Click me!",
-    popup="Gare Calais ville",
-    icon=folium.Icon(icon='2', prefix='fa', color='blue'),
-).add_to(m)
-
-folium.Marker(
-    location=[coordGareFrethun[0],coordGareFrethun[1]],
-    tooltip="Click me!",
-    popup="Gare Calais Frethun",
-    icon=folium.Icon(icon='3', prefix='fa', color='green'),
-).add_to(m)
-
-distance = geodesic(coordUniversite, coordGareFrethun).kilometers
-folium.PolyLine(locations=[coordUniversite, coordGareFrethun], color='blue').add_to(m)
-folium.Marker(location=[(coordUniversite[0] + coordGareFrethun[0]) / 2, (coordUniversite[1] + coordGareFrethun[1]) / 2],
-              icon=folium.DivIcon(html=f'<div style="font-size: 12pt; color: blue;">{distance:.2f} km</div>')).add_to(m)
-
-distance = geodesic(coordUniversite, coordGareCalaisVille).kilometers
-folium.PolyLine(locations=[coordUniversite, coordGareCalaisVille], color='blue').add_to(m)
-folium.Marker(location=[(coordUniversite[0] + coordGareCalaisVille[0]) / 2, (coordUniversite[1] + coordGareCalaisVille[1]) / 2],
-              icon=folium.DivIcon(html=f'<div style="font-size: 12pt; color: blue;">{distance:.2f} km</div>')).add_to(m)
-
-
-return render_template('about.html')
